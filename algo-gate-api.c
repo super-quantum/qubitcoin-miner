@@ -308,6 +308,9 @@ bool register_algo_gate( int algo, algo_gate_t *gate )
     case ALGO_BMW512:       rc = register_bmw512_algo        ( gate ); break;
     case ALGO_C11:          rc = register_c11_algo           ( gate ); break;
     case ALGO_DEEP:         rc = register_deep_algo          ( gate ); break;
+#if defined(TASK_DEQODE_ENABLED)
+    case ALGO_DEQODE:       rc = register_deqode_algo        ( gate ); break;
+#endif
     case ALGO_DMD_GR:       rc = register_dmd_gr_algo        ( gate ); break;
     case ALGO_GROESTL:      rc = register_groestl_algo       ( gate ); break;
     case ALGO_HEX:          rc = register_hex_algo           ( gate ); break;
@@ -333,7 +336,9 @@ bool register_algo_gate( int algo, algo_gate_t *gate )
     case ALGO_PHI2:         rc = register_phi2_algo          ( gate ); break;
     case ALGO_POLYTIMOS:    rc = register_polytimos_algo     ( gate ); break;
     case ALGO_POWER2B:      rc = register_power2b_algo       ( gate ); break;
+#if defined(TASK_QHASH_ENABLED)
     case ALGO_QHASH:        rc = register_qhash_algo         ( gate ); break;
+#endif
     case ALGO_QUARK:        rc = register_quark_algo         ( gate ); break;
     case ALGO_QUBIT:        rc = register_qubit_algo         ( gate ); break;
     case ALGO_SCRYPT:       rc = register_scrypt_algo        ( gate ); break;
@@ -386,6 +391,20 @@ bool register_algo_gate( int algo, algo_gate_t *gate )
     case ALGO_YESPOWER_B2B: rc = register_yespower_b2b_algo  ( gate ); break;
     case ALGO_ZR5:          rc = register_zr5_algo           ( gate ); break;
    default:
+#if !defined(TASK_QHASH_ENABLED)
+      if ( algo == ALGO_QHASH )
+      {
+         applog( LOG_ERR, "qhash was not compiled into this binary, rebuild with --enable-tasks=qhash" );
+         return false;
+      }
+#endif
+#if !defined(TASK_DEQODE_ENABLED)
+      if ( algo == ALGO_DEQODE )
+      {
+         applog( LOG_ERR, "deqode was not compiled into this binary, rebuild with --enable-tasks=deqode" );
+         return false;
+      }
+#endif
       applog(LOG_ERR,"BUG: unregistered algorithm %s.\n", algo_names[opt_algo] );
       return false;
   } // switch

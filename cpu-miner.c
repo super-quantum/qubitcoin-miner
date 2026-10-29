@@ -70,6 +70,9 @@
 
 #include "miner.h"
 #include "algo-gate-api.h"
+#if defined(TASK_DEQODE_ENABLED)
+#include "algo/deqode/deqode-gate.h"
+#endif
 #include "algo/sha/sha256-hash.h"
 
 #ifdef WIN32
@@ -3524,6 +3527,37 @@ void parse_arg(int key, char *arg )
    case 1016:			/* --coinbase-addr */
       if ( arg ) coinbase_address = strdup( arg );
 		break;
+#if defined(TASK_DEQODE_ENABLED)
+   case 1070:        /* --deqode-sizing=n:r:w:gate_multiplier */
+      if ( !arg || !deqode_parse_sizing( arg ) )
+      {
+         fprintf( stderr, "invalid --deqode-sizing '%s', want n:r:w[:gate_multiplier]\n",
+                  arg ? arg : "" );
+         show_usage_and_exit(1);
+      }
+      break;
+   case 1071:        /* --deqode-p=left:right */
+      if ( !arg || !deqode_parse_orders( arg ) )
+      {
+         fprintf( stderr, "invalid --deqode-p '%s', want left:right\n", arg ? arg : "" );
+         show_usage_and_exit(1);
+      }
+      break;
+   case 1072:        /* --deqode-l */
+      deqode_opt_tuning.window_bits = atoi( arg );
+      break;
+   case 1073:        /* --deqode-mem, MiB per thread */
+      deqode_opt_tuning.memory_bytes = (size_t) atoi( arg ) << 20;
+      break;
+   case 1074:        /* --deqode-batch */
+      deqode_opt_tuning.batch = atoi( arg );
+      break;
+#else
+   case 1070: case 1071: case 1072: case 1073: case 1074:
+      fprintf( stderr, "deqode was not compiled into this binary; rebuild with --enable-tasks=deqode\n" );
+      show_usage_and_exit(1);
+      break;
+#endif
 	case 1015:			/* --coinbase-sig */
 		if ( strlen( arg ) + 1 > sizeof(coinbase_sig) )
       {

@@ -69,6 +69,52 @@ case $MINGW_TARGET in
     ;;
 esac
 
+dnl Qubitcoin proof-of-work tasks to build. Only qhash needs CUDA and cuQuantum.
+AC_ARG_ENABLE([tasks],
+  AS_HELP_STRING([--enable-tasks=LIST],
+    [comma separated proof-of-work tasks to build: qhash,deqode (default: all)]))
+
+task_qhash=no
+task_deqode=no
+if test "x${enable_tasks+set}" != xset -o "x$enable_tasks" = xyes -o "x$enable_tasks" = xall ; then
+   task_qhash=yes
+   task_deqode=yes
+else
+   if test "x$enable_tasks" = xno ; then
+      AC_MSG_ERROR([--enable-tasks needs at least one task])
+   fi
+   save_IFS=$IFS
+   IFS=,
+   for task in $enable_tasks ; do
+      IFS=$save_IFS
+      case $task in
+         qhash)   task_qhash=yes   ;;
+         deqode)  task_deqode=yes  ;;
+         "")      ;;
+         *) AC_MSG_ERROR([unknown proof-of-work task '$task'; known tasks are qhash,deqode]) ;;
+      esac
+      IFS=,
+   done
+   IFS=$save_IFS
+fi
+
+if test "x$task_qhash" != xyes -a "x$task_deqode" != xyes ; then
+   AC_MSG_ERROR([--enable-tasks selected no tasks])
+fi
+
+enabled_tasks=
+if test "x$task_qhash" = xyes ; then
+   AC_DEFINE([TASK_QHASH_ENABLED], [1], [Define to 1 to build the qhash task (task 0).])
+   enabled_tasks="$enabled_tasks qhash"
+fi
+if test "x$task_deqode" = xyes ; then
+   AC_DEFINE([TASK_DEQODE_ENABLED], [1], [Define to 1 to build the deqode task (task 1).])
+   enabled_tasks="$enabled_tasks deqode"
+fi
+
+AM_CONDITIONAL([TASK_QHASH],   [test x$task_qhash = xyes])
+AM_CONDITIONAL([TASK_DEQODE],  [test x$task_deqode = xyes])
+
 AC_ARG_ENABLE([assembly],
   AS_HELP_STRING([--disable-assembly], [disable assembly-language routines]))
 if test x$enable_assembly != xno; then
@@ -200,3 +246,10 @@ AC_CONFIG_FILES([
 	compat/jansson/Makefile
 	])
 AC_OUTPUT
+
+AC_MSG_NOTICE([proof-of-work tasks:$enabled_tasks])
+if test "x$task_qhash" = xyes ; then
+   AC_MSG_NOTICE([qhash needs CUDA_PATH and CUQUANTUM_ROOT set in the environment at build time])
+else
+   AC_MSG_NOTICE([qhash is not built: no CUDA or cuQuantum dependency])
+fi

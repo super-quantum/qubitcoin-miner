@@ -83,6 +83,7 @@ Supported Algorithms
                           c11           
                           decred
                           deep          Deepcoin (DCN)
+                          deqode        Qubitcoin task 1
                           dmd-gr        Diamond-Groestl
                           groestl       Groestl coin
                           hex           x16r-hex

@@ -9,7 +9,12 @@ EXTRA_DIST	= example-cfg.json nomacro.pl
 
 SUBDIRS		= compat
 
+# Only qhash needs CUDA and cuQuantum.
+if TASK_QHASH
 CUSTATEVEC_INCLUDES = -I$(CUDA_PATH)/include -I$(CUQUANTUM_ROOT)/include
+else
+CUSTATEVEC_INCLUDES =
+endif
 
 ALL_INCLUDES	= @PTHREAD_FLAGS@ -fno-strict-aliasing $(JANSSON_INCLUDES) $(CUSTATEVEC_INCLUDES) -I.
 
@@ -122,9 +127,6 @@ qubitcoin_miner_SOURCES = \
   algo/nist5/zr5.c \
   algo/panama/panama-hash-4way.c \
   algo/panama/sph_panama.c \
-  algo/qhash/qhash-gate.c \
-  algo/qhash/qhash.c \
-  algo/qhash/qhash-custatevec.c \
   algo/quark/quark-gate.c \
   algo/quark/quark.c \
   algo/quark/quark-4way.c \
@@ -289,11 +291,31 @@ else
    disable_flags += -DNOASM
 endif
 
+# Qubitcoin proof-of-work tasks, selected with --enable-tasks.
+if TASK_QHASH
+   qubitcoin_miner_SOURCES += \
+     algo/qhash/qhash-gate.c \
+     algo/qhash/qhash.c \
+     algo/qhash/qhash-custatevec.c
+endif
+
+if TASK_DEQODE
+   qubitcoin_miner_SOURCES += \
+     algo/deqode/deqode-gate.c \
+     algo/deqode/deqode.c \
+     algo/deqode/deqode-stern.c \
+     algo/deqode/deqode-mine.c
+endif
+
 if HAVE_WINDOWS
    qubitcoin_miner_SOURCES += compat/winansi.c
 endif
 
+if TASK_QHASH
 CUSTATEVEC_LDFLAGS = -L$(CUDA_PATH)/lib64 -L$(CUDA_PATH)/lib -L$(CUQUANTUM_ROOT)/lib -lcustatevec_static -lcublas -lcudart # -lcustatevec_static -lcublas_static -lcublasLt_static -lculibos -lcudart_static
+else
+CUSTATEVEC_LDFLAGS =
+endif
 
 qubitcoin_miner_LDFLAGS	= @LDFLAGS@
 qubitcoin_miner_LDADD	= @LIBCURL@ @JANSSON_LIBS@ @PTHREAD_LIBS@ @WS2_LIBS@ -lgmp $(CUSTATEVEC_LDFLAGS)

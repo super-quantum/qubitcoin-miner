@@ -618,6 +618,7 @@ enum algos {
         ALGO_BMW512,
         ALGO_C11,         
         ALGO_DEEP,
+        ALGO_DEQODE,
         ALGO_DMD_GR,
         ALGO_GROESTL,     
         ALGO_HEX,
@@ -715,6 +716,7 @@ static const char* const algo_names[] = {
         "bmw512",
         "c11",
         "deep",
+        "deqode",
         "dmd-gr",
         "groestl",
         "hex",
@@ -879,6 +881,7 @@ Options:\n\
                           bmw512        BMW 512\n\
                           c11           Chaincoin\n\
                           deep          Deepcoin (DCN)\n\
+                          deqode        Qubitcoin task 1\n\
                           dmd-gr        Diamond\n\
                           groestl       Groestl coin\n\
                           hex           x16r-hex\n\
@@ -980,6 +983,11 @@ Options:\n\
   -m, --diff-multiplier=N Multiply difficulty by this factor (std is 1.0)\n\
       --hash-meter      display thread hash rates\n\
       --coinbase-addr=ADDR  payout address for solo mining\n\
+      --deqode-sizing=n:r:w[:g]  deqode sizing for --benchmark, which requires it\n\
+      --deqode-p=L:R    deqode Stern pattern orders (default 2:2)\n\
+      --deqode-l=BITS   deqode collision window; default as wide as the batch allows\n\
+      --deqode-mem=MIB  deqode pattern list budget per thread (default 64)\n\
+      --deqode-batch=N  deqode nonces per information set (default 2^(l+1), at most 2^20)\n\
       --coinbase-sig=TEXT  data to insert in the coinbase when possible\n\
       --no-longpoll     disable long polling support\n\
       --no-getwork      disable getwork support\n\
@@ -1034,6 +1042,11 @@ static struct option const options[] = {
         { "cputest", 0, NULL, 1006 },
         { "cert", 1, NULL, 1001 },
         { "coinbase-addr", 1, NULL, 1016 },
+        { "deqode-sizing", 1, NULL, 1070 },
+        { "deqode-p", 1, NULL, 1071 },
+        { "deqode-l", 1, NULL, 1072 },
+        { "deqode-mem", 1, NULL, 1073 },
+        { "deqode-batch", 1, NULL, 1074 },
         { "coinbase-sig", 1, NULL, 1015 },
         { "config", 1, NULL, 'c' },
         { "cpu-affinity", 1, NULL, 1020 },
