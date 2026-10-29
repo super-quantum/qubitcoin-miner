@@ -80,7 +80,7 @@ static void get_expectations(double expectations[NUM_QUBITS])
         nBasisBits));
 }
 
-static void main_circuit(const unsigned char data[2 * SHA256_BLOCK_SIZE])
+static void main_circuit(const unsigned char data[2 * SHA256_BLOCK_SIZE], int angle_offset)
 {
     for (size_t l = 0; l < NUM_LAYERS; ++l)
     {
@@ -90,12 +90,14 @@ static void main_circuit(const unsigned char data[2 * SHA256_BLOCK_SIZE])
             // RY gates
             HANDLE_CUSTATEVEC_ERROR(custatevecApplyPauliRotation(
                 handle, dStateVec, CUDA_C_32F, NUM_QUBITS,
-                -data[(2 * l * NUM_QUBITS + i) % (2 * SHA256_BLOCK_SIZE)] * CUDART_PI / 16, pauliY,
-                &target, 1, NULL, NULL, 0));
+                -(2 * data[(2 * l * NUM_QUBITS + i) % (2 * SHA256_BLOCK_SIZE)] + angle_offset) *
+                    CUDART_PI / 32,
+                pauliY, &target, 1, NULL, NULL, 0));
             // RZ gates
             HANDLE_CUSTATEVEC_ERROR(custatevecApplyPauliRotation(
                 handle, dStateVec, CUDA_C_32F, NUM_QUBITS,
-                -data[((2 * l + 1) * NUM_QUBITS + i) % (2 * SHA256_BLOCK_SIZE)] * CUDART_PI / 16,
+                -(2 * data[((2 * l + 1) * NUM_QUBITS + i) % (2 * SHA256_BLOCK_SIZE)] + angle_offset) *
+                    CUDART_PI / 32,
                 pauliZ, &target, 1, NULL, NULL, 0));
         }
         for (size_t i = 0; i < NUM_QUBITS - 1; ++i)
@@ -113,11 +115,12 @@ static void main_circuit(const unsigned char data[2 * SHA256_BLOCK_SIZE])
     }
 }
 
-void run_simulation(const unsigned char data[2 * SHA256_BLOCK_SIZE], double expectations[NUM_QUBITS])
+void run_simulation(const unsigned char data[2 * SHA256_BLOCK_SIZE], int angle_offset,
+                    double expectations[NUM_QUBITS])
 {
     HANDLE_CUSTATEVEC_ERROR(custatevecInitializeStateVector(handle, dStateVec, CUDA_C_32F,
                                                             NUM_QUBITS,
                                                             CUSTATEVEC_STATE_VECTOR_TYPE_ZERO));
-    main_circuit(data);
+    main_circuit(data, angle_offset);
     get_expectations(expectations);
 }
