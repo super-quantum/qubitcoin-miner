@@ -10,6 +10,14 @@ static const uint32_t SHA256_IV[8] =
 
 #if defined(__x86_64__) && defined(__SHA__)
 
+// The SHA-NI instructions are legacy SSE, so on Intel they pay the SSE/AVX transition
+// penalty when the upper YMM halves are dirty, e.g. after sha256_full copies its input
+// with 256 bit stores, which makes a short hash about forty times slower.
+#if defined(__AVX__)
+  #define sha_ni_clean_upper()   _mm256_zeroupper()
+#else
+  #define sha_ni_clean_upper()
+#endif
 
 /* common code used for rounds 12 through 51  */
 
@@ -214,6 +222,7 @@ static const uint32_t SHA256_IV[8] =
 void sha256_x86_sha_transform_le( uint32_t *state_out, const void *input,
                               const uint32_t *state_in )
 {
+   sha_ni_clean_upper();
 #define load_msg( m, i ) casti_v128( m, i )
    sha256_opt_rounds( state_out, input, state_in );
 #undef load_msg
@@ -222,6 +231,7 @@ void sha256_x86_sha_transform_le( uint32_t *state_out, const void *input,
 void sha256_x86_sha_transform_be( uint32_t *state_out, const void *input,
                               const uint32_t *state_in )
 {
+   sha_ni_clean_upper();
 #define load_msg( m, i ) v128_bswap32( casti_v128( m, i ) )
    sha256_opt_rounds( state_out, input, state_in );
 #undef load_msg
@@ -543,6 +553,7 @@ void sha256_x86_x2sha_transform_le( uint32_t *out_X, uint32_t*out_Y,
                                  const void *msg_X, const void *msg_Y,
                                  const uint32_t *in_X, const uint32_t *in_Y )
 {
+   sha_ni_clean_upper();
 #define load_msg( m, i ) casti_v128( m, i )
  sha256_ni2x_rounds( out_X, out_Y, msg_X, msg_Y, in_X, in_Y );
 #undef load_msg
@@ -552,6 +563,7 @@ void sha256_x86_x2sha_transform_be( uint32_t *out_X, uint32_t*out_Y,
                               const void *msg_X, const void *msg_Y,
                               const uint32_t *in_X, const uint32_t *in_Y )
 {
+   sha_ni_clean_upper();
 #define load_msg( m, i ) v128_bswap32( casti_v128( m, i ) )
  sha256_ni2x_rounds( out_X, out_Y, msg_X, msg_Y, in_X, in_Y );
 #undef load_msg
@@ -567,6 +579,7 @@ void sha256_x86_sha_prehash_3rounds( uint32_t *ostate, const void *msg,
                                 uint32_t *sstate, const uint32_t *istate )
 {
    __m128i STATE0, STATE1, MSG, TMP;
+   sha_ni_clean_upper();
 
    // Load initial values
    TMP    = casti_v128u32( istate, 0 );
@@ -598,6 +611,7 @@ void sha256_x86_x2sha_final_rounds( uint32_t *out_X, uint32_t *out_Y,
 {
     __m128i STATE0_X, STATE1_X, STATE0_Y, STATE1_Y;
     __m128i MSG_X, MSG_Y, TMP_X, TMP_Y;
+    sha_ni_clean_upper();
     __m128i TMSG0_X, TMSG1_X, TMSG2_X, TMSG3_X;
     __m128i TMSG0_Y, TMSG1_Y, TMSG2_Y, TMSG3_Y;
 
