@@ -142,6 +142,9 @@ void ( *get_new_work )          ( struct work*, struct work*, int, uint32_t* );
 // Decode getwork blockheader
 bool ( *work_decode )           ( struct work* );
 
+// Read task-specific fields from a getblocktemplate response, after the header is built.
+bool ( *gbt_decode_task )       ( const json_t*, struct work* );
+
 // Extra getwork data
 void ( *decode_extra_data )     ( struct work*, uint64_t* );
 
@@ -173,6 +176,8 @@ void ( *resync_threads )        ( int, struct work* );
 json_t* ( *longpoll_rpc_call )  ( CURL*, int*, char* );
 
 set_t optimizations;
+// The Qubitcoin proof-of-work task this algo solves (0 is qhash).
+uint8_t task_id;
 int  ( *get_work_data_size )     ();
 int  ntime_index;
 int  nbits_index;

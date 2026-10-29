@@ -458,10 +458,18 @@ void   cpu_brand_string( char* s );
 float cpu_temp( int core );
 */
 
+// The node's MAX_BLOCK_TASK_DATA_SIZE.
+#define MAX_TASK_DATA_SIZE 256
+
 struct work
 {
    uint32_t target[8] __attribute__ ((aligned (64)));
 	uint32_t data[48] __attribute__ ((aligned (64)));
+   // Proof-of-work task state, fixed size so work_copy can memcpy it.
+   uint32_t task_params[4];                        // task parameters from the template
+   uint32_t task_target[8];                        // task acceptance target, if any
+   unsigned char taskdata[MAX_TASK_DATA_SIZE];     // task data for the block header
+   uint16_t taskdata_len;
 	double targetdiff;
 	double sharediff;
    double stratum_diff;
@@ -790,6 +798,7 @@ static const char* const algo_names[] = {
 const char* algo_name( enum algos a );
 
 extern enum algos opt_algo;
+extern uint8_t opt_task_id;
 extern bool opt_debug;
 extern bool opt_debug_diff;
 extern bool opt_benchmark;

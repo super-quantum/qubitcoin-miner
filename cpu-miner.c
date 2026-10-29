@@ -113,6 +113,8 @@ static int opt_scantime = 0;
 const int min_scantime = 1;
 //static const bool opt_time = true;
 enum algos opt_algo = ALGO_NULL;
+// The Qubitcoin proof-of-work task the selected algo solves (0 is qhash).
+uint8_t opt_task_id = 0;
 char* opt_param_key = NULL;
 int opt_param_n = 0;
 int opt_param_r = 0;
@@ -898,6 +900,13 @@ static bool gbt_work_decode( const json_t *val, struct work *work )
    casti_v128( work->target, 1 ) = v128_bswap128( casti_v128( target, 0 ) );
    net_diff = work->targetdiff = hash_to_diff( work->target );
 
+   // Task-specific template fields.
+   work->taskdata_len = 0;
+   memset( work->task_params, 0, sizeof(work->task_params) );
+   memset( work->task_target, 0, sizeof(work->task_target) );
+   if ( unlikely( !algo_gate.gbt_decode_task( val, work ) ) )
+      goto out;
+
    tmp = json_object_get( val, "workid" );
    if ( tmp )
    {
@@ -1523,6 +1532,34 @@ static const char *gbt_req =
 const char *gbt_lp_req =
    "{\"method\": \"getblocktemplate\", \"params\": [{\"capabilities\": "
    GBT_CAPABILITIES ", \"rules\": " GBT_RULES ", \"longpollid\": \"%s\"}], \"id\":0}\r\n";
+
+// The same requests with a task_id, used for tasks other than 0.
+static const char *gbt_task_req_fmt =
+   "{\"method\": \"getblocktemplate\", \"params\": [{\"capabilities\": "
+   GBT_CAPABILITIES ", \"rules\": " GBT_RULES ", \"task_id\": %u}], \"id\":0}\r\n";
+static const char *gbt_task_lp_req_fmt =
+   "{\"method\": \"getblocktemplate\", \"params\": [{\"capabilities\": "
+   GBT_CAPABILITIES ", \"rules\": " GBT_RULES ", \"task_id\": %u"
+   ", \"longpollid\": \"%%s\"}], \"id\":0}\r\n";
+
+static void init_task_gbt_requests( void )
+{
+   char *req, *lp_req;
+
+   if ( opt_task_id == 0 ) return;
+
+   req    = (char*) malloc( strlen( gbt_task_req_fmt )    + 16 );
+   lp_req = (char*) malloc( strlen( gbt_task_lp_req_fmt ) + 16 );
+   if ( !req || !lp_req )
+   {
+      applog( LOG_ERR, "out of memory building the task template request" );
+      exit(1);
+   }
+   sprintf( req,    gbt_task_req_fmt,    (unsigned) opt_task_id );
+   sprintf( lp_req, gbt_task_lp_req_fmt, (unsigned) opt_task_id );
+   gbt_req    = req;
+   gbt_lp_req = lp_req;
+}
 
 static bool get_upstream_work( CURL *curl, struct work *work )
 {
@@ -3758,6 +3795,27 @@ int main(int argc, char *argv[])
    // Would need to split register function into 2 parts. First part sets algo
    // optimizations but no logging, second part does any logging.   
    if ( !register_algo_gate( opt_algo, &algo_gate ) )  exit(1);
+
+   opt_task_id = algo_gate.task_id;
+   if ( opt_task_id != 0 )
+   {
+      // Task data cannot be carried by stratum or getwork.
+      if ( have_stratum )
+      {
+         applog( LOG_ERR, "%s solves task %u, which stratum cannot carry. Use getblocktemplate against a node: -o http://host:port",
+                 algo_names[ opt_algo ], (unsigned) opt_task_id );
+         exit(1);
+      }
+      if ( !have_gbt )
+      {
+         applog( LOG_ERR, "%s solves task %u, which getwork cannot carry. Drop --no-gbt.",
+                 algo_names[ opt_algo ], (unsigned) opt_task_id );
+         exit(1);
+      }
+      allow_getwork = false;
+      want_stratum = false;
+      init_task_gbt_requests();
+   }
 
    if ( !check_cpu_capability() ) exit(1);
    

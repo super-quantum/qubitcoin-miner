@@ -255,6 +255,7 @@ static void init_algo_gate( algo_gate_t* gate )
    gate->hash                    = (void*)&null_hash;
    gate->get_new_work            = (void*)&std_get_new_work;
    gate->work_decode             = (void*)&std_le_work_decode;
+   gate->gbt_decode_task         = (void*)&return_true;
    gate->decode_extra_data       = (void*)&do_nothing;
    gate->gen_merkle_root         = (void*)&sha256d_gen_merkle_root;
    gate->build_stratum_request   = (void*)&std_le_build_stratum_request;
@@ -268,6 +269,7 @@ static void init_algo_gate( algo_gate_t* gate )
    gate->longpoll_rpc_call       = (void*)&std_longpoll_rpc_call;
    gate->get_work_data_size      = (void*)&std_get_work_data_size;
    gate->optimizations           = EMPTY_SET;
+   gate->task_id                 = 0;
    gate->ntime_index             = STD_NTIME_INDEX;
    gate->nbits_index             = STD_NBITS_INDEX;
    gate->nonce_index             = STD_NONCE_INDEX;
