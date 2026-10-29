@@ -696,15 +696,26 @@ static bool gbt_work_decode( const json_t *val, struct work *work )
       memset( cbtx+5, 0x00, 32 ); /* prev txout hash */
       le32enc( (uint32_t *)(cbtx+37), 0xffffffff ); /* prev txout index */
       cbtx_size = 43;
-      /* BIP 34: height in coinbase */
-      for ( n = work->height; n; n >>= 8 )
-         cbtx[cbtx_size++] = n & 0xff;
-      /* If the last byte pushed is >= 0x80, then we need to add
-         another zero byte to signal that the block height is a
-         positive number.  */
-      if (cbtx[cbtx_size - 1] & 0x80)
-         cbtx[cbtx_size++] = 0;
-      cbtx[42] = cbtx_size - 43;
+      /* BIP 34: height in coinbase, encoded as Bitcoin Core's `CScript() << nHeight`:
+         OP_0 for 0, OP_1..OP_16 for 1..16, otherwise a minimal push. */
+      if ( work->height <= 16 )
+      {
+         cbtx[42] = work->height <= 0 ? 0x00                          /* OP_0 */
+                                      : (uchar)( 0x50 + work->height ); /* OP_1..OP_16 */
+         /* The scriptSig must be at least two bytes. */
+         cbtx[ cbtx_size++ ] = 0x00;                                 /* OP_0 */
+      }
+      else
+      {
+         for ( n = work->height; n; n >>= 8 )
+            cbtx[cbtx_size++] = n & 0xff;
+         /* If the last byte pushed is >= 0x80, then we need to add
+            another zero byte to signal that the block height is a
+            positive number.  */
+         if (cbtx[cbtx_size - 1] & 0x80)
+            cbtx[cbtx_size++] = 0;
+         cbtx[42] = cbtx_size - 43;
+      }
       cbtx[41] = cbtx_size - 42; /* scriptsig length */
       le32enc( (uint32_t *)( cbtx+cbtx_size ), 0xffffffff ); /* sequence */
       cbtx_size += 4;
