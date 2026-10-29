@@ -38,7 +38,7 @@ static void split_nibbles(const unsigned char input[SHA256_BLOCK_SIZE],
     }
 }
 
-int qhash_hash(void *output, const void *input, int thr_id)
+int qhash_digest(void *output, const void *input, qhash_simulation_fn simulate)
 {
     const uint32_t ntime = le32dec((const unsigned char *)input + NTIME_OFFSET);
 
@@ -49,7 +49,7 @@ int qhash_hash(void *output, const void *input, int thr_id)
     split_nibbles(buf, nibbles);
 
     double expectations[NUM_QUBITS];
-    run_simulation(nibbles, ntime >= ANGLE_OFFSET_TIME, expectations);
+    simulate(nibbles, ntime >= ANGLE_OFFSET_TIME, expectations);
 
     size_t zeroes = 0;
     for (size_t i = 0; i < NUM_QUBITS; ++i)

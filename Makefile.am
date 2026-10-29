@@ -292,11 +292,18 @@ else
 endif
 
 # Qubitcoin proof-of-work tasks, selected with --enable-tasks.
-if TASK_QHASH
+if TASK_QHASH_COMMON
    qubitcoin_miner_SOURCES += \
      algo/qhash/qhash-gate.c \
-     algo/qhash/qhash.c \
-     algo/qhash/qhash-custatevec.c
+     algo/qhash/qhash.c
+endif
+
+if TASK_QHASH
+   qubitcoin_miner_SOURCES += algo/qhash/qhash-custatevec.c
+endif
+
+if TASK_QHASH_CPU
+   qubitcoin_miner_SOURCES += algo/qhash/qhash-cpu.c
 endif
 
 if TASK_DEQODE

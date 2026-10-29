@@ -12,8 +12,13 @@
 #define NTIME_OFFSET 68
 
 bool register_qhash_algo(algo_gate_t *gate);
+bool register_qhash_cpu_algo(algo_gate_t *gate);
 
-int qhash_hash(void *output, const void *input, int thr_id);
+typedef void (*qhash_simulation_fn)(const unsigned char data[2 * SHA256_BLOCK_SIZE],
+                                    int angle_offset, double expectations[NUM_QUBITS]);
+
+/** Hashes an 80-byte header, running the circuit with the given simulator. */
+int qhash_digest(void *output, const void *input, qhash_simulation_fn simulate);
 
 // Simulator-specific functions
 
@@ -32,5 +37,12 @@ bool qhash_thread_init(int thr_id);
  */
 void run_simulation(const unsigned char data[2 * SHA256_BLOCK_SIZE], int angle_offset,
                     double expectations[NUM_QUBITS]);
+
+/** CPU counterpart of qhash_thread_init. */
+bool qhash_cpu_thread_init(int thr_id);
+
+/** CPU counterpart of run_simulation, in double precision like the node. */
+void run_simulation_cpu(const unsigned char data[2 * SHA256_BLOCK_SIZE], int angle_offset,
+                        double expectations[NUM_QUBITS]);
 
 #endif

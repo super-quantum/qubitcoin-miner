@@ -110,6 +110,7 @@ Supported Algorithms
                           polytimos     Ninja
                           power2b       MicroBitcoin (MBC)
                           qhash         QHash
+                          qhash-cpu     QHash on the CPU
                           quark         Quark
                           qubit         Qubit
                           scrypt        scrypt(1024, 1, 1) (default)

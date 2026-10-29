@@ -339,6 +339,9 @@ bool register_algo_gate( int algo, algo_gate_t *gate )
 #if defined(TASK_QHASH_ENABLED)
     case ALGO_QHASH:        rc = register_qhash_algo         ( gate ); break;
 #endif
+#if defined(TASK_QHASH_CPU_ENABLED)
+    case ALGO_QHASH_CPU:    rc = register_qhash_cpu_algo     ( gate ); break;
+#endif
     case ALGO_QUARK:        rc = register_quark_algo         ( gate ); break;
     case ALGO_QUBIT:        rc = register_qubit_algo         ( gate ); break;
     case ALGO_SCRYPT:       rc = register_scrypt_algo        ( gate ); break;
@@ -395,6 +398,13 @@ bool register_algo_gate( int algo, algo_gate_t *gate )
       if ( algo == ALGO_QHASH )
       {
          applog( LOG_ERR, "qhash was not compiled into this binary, rebuild with --enable-tasks=qhash" );
+         return false;
+      }
+#endif
+#if !defined(TASK_QHASH_CPU_ENABLED)
+      if ( algo == ALGO_QHASH_CPU )
+      {
+         applog( LOG_ERR, "qhash-cpu was not compiled into this binary, rebuild with --enable-tasks=qhash-cpu" );
          return false;
       }
 #endif

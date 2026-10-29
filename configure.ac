@@ -72,12 +72,14 @@ esac
 dnl Qubitcoin proof-of-work tasks to build. Only qhash needs CUDA and cuQuantum.
 AC_ARG_ENABLE([tasks],
   AS_HELP_STRING([--enable-tasks=LIST],
-    [comma separated proof-of-work tasks to build: qhash,deqode (default: all)]))
+    [comma separated proof-of-work tasks to build: qhash,qhash-cpu,deqode (default: all)]))
 
 task_qhash=no
+task_qhash_cpu=no
 task_deqode=no
 if test "x${enable_tasks+set}" != xset -o "x$enable_tasks" = xyes -o "x$enable_tasks" = xall ; then
    task_qhash=yes
+   task_qhash_cpu=yes
    task_deqode=yes
 else
    if test "x$enable_tasks" = xno ; then
@@ -88,17 +90,18 @@ else
    for task in $enable_tasks ; do
       IFS=$save_IFS
       case $task in
-         qhash)   task_qhash=yes   ;;
-         deqode)  task_deqode=yes  ;;
-         "")      ;;
-         *) AC_MSG_ERROR([unknown proof-of-work task '$task'; known tasks are qhash,deqode]) ;;
+         qhash)     task_qhash=yes     ;;
+         qhash-cpu) task_qhash_cpu=yes ;;
+         deqode)    task_deqode=yes    ;;
+         "")        ;;
+         *) AC_MSG_ERROR([unknown proof-of-work task '$task'; known tasks are qhash,qhash-cpu,deqode]) ;;
       esac
       IFS=,
    done
    IFS=$save_IFS
 fi
 
-if test "x$task_qhash" != xyes -a "x$task_deqode" != xyes ; then
+if test "x$task_qhash" != xyes -a "x$task_qhash_cpu" != xyes -a "x$task_deqode" != xyes ; then
    AC_MSG_ERROR([--enable-tasks selected no tasks])
 fi
 
@@ -107,13 +110,19 @@ if test "x$task_qhash" = xyes ; then
    AC_DEFINE([TASK_QHASH_ENABLED], [1], [Define to 1 to build the qhash task (task 0).])
    enabled_tasks="$enabled_tasks qhash"
 fi
+if test "x$task_qhash_cpu" = xyes ; then
+   AC_DEFINE([TASK_QHASH_CPU_ENABLED], [1], [Define to 1 to build qhash-cpu, the qhash task simulated on the CPU.])
+   enabled_tasks="$enabled_tasks qhash-cpu"
+fi
 if test "x$task_deqode" = xyes ; then
    AC_DEFINE([TASK_DEQODE_ENABLED], [1], [Define to 1 to build the deqode task (task 1).])
    enabled_tasks="$enabled_tasks deqode"
 fi
 
-AM_CONDITIONAL([TASK_QHASH],   [test x$task_qhash = xyes])
-AM_CONDITIONAL([TASK_DEQODE],  [test x$task_deqode = xyes])
+AM_CONDITIONAL([TASK_QHASH],        [test x$task_qhash = xyes])
+AM_CONDITIONAL([TASK_QHASH_CPU],    [test x$task_qhash_cpu = xyes])
+AM_CONDITIONAL([TASK_QHASH_COMMON], [test x$task_qhash = xyes -o x$task_qhash_cpu = xyes])
+AM_CONDITIONAL([TASK_DEQODE],       [test x$task_deqode = xyes])
 
 AC_ARG_ENABLE([assembly],
   AS_HELP_STRING([--disable-assembly], [disable assembly-language routines]))
