@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #include "deqode-gate.h"
 
@@ -46,7 +47,9 @@ static bool json_int_field( const json_t *obj, const char *name, int *out )
 {
    const json_t *v = json_object_get( obj, name );
    if ( !v || !json_is_integer( v ) ) return false;
-   *out = (int) json_integer_value( v );
+   const json_int_t value = json_integer_value( v );
+   if ( value < INT_MIN || value > INT_MAX ) return false;
+   *out = (int) value;
    return true;
 }
 
@@ -135,11 +138,12 @@ static bool deqode_gbt_decode_task( const json_t *val, struct work *work )
       ( (unsigned char*) work->task_target )[i] = raw[ 31 - i ];
 
    int data_bytes = 0;
-   if ( json_int_field( task, "data_bytes", &data_bytes )
-     && (size_t)data_bytes != dq_witness_bytes( params.n ) )
+   if ( json_object_get( task, "data_bytes" )
+     && ( !json_int_field( task, "data_bytes", &data_bytes )
+       || (size_t)data_bytes != dq_witness_bytes( params.n ) ) )
    {
-      applog( LOG_ERR, "deqode: the node wants a %d byte witness but n=%d needs %zu",
-              data_bytes, params.n, dq_witness_bytes( params.n ) );
+      applog( LOG_ERR, "deqode: the template has invalid data_bytes for n=%d; expected %zu",
+              params.n, dq_witness_bytes( params.n ) );
       return false;
    }
 
